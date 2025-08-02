@@ -1,0 +1,29 @@
+name: overdose_shield_wa
+description: A mobile app to locate naloxone and provide overdose prevention help in WA.
+publish_to: "none" # this is a private project
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_pdfview: ^1.4.1+1
+  path_provider: ^2.1.2
+  url_launcher: ^6.3.2
+  permission_handler: ^12.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/150-127-StatewideStandingOrderToDispenseNaloxone.pdf
+    - assets/narcan_access_instructions.pdf
+
