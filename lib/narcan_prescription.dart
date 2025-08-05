@@ -7,7 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 // Conditional imports for mobile only
-import 'package:path_provider/path_provider.dart' if (dart.library.html) 'dart:html' as path_provider;
+import 'package:path_provider/path_provider.dart' as path_provider;
 
 class NarcanPrescriptionScreen extends StatefulWidget {
   const NarcanPrescriptionScreen({super.key});
@@ -30,12 +30,14 @@ class _NarcanPrescriptionScreenState extends State<NarcanPrescriptionScreen> {
   Future<void> _loadPdf() async {
     try {
       final bytes = await rootBundle.load('assets/150-127-StatewideStandingOrderToDispenseNaloxone.pdf');
-      final dir = await path_provider.getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/prescription.pdf');
-      await file.writeAsBytes(bytes.buffer.asUint8List(), flush: true);
-      setState(() {
-        localPath = file.path;
-      });
+      if (!kIsWeb) {
+        final dir = await path_provider.getApplicationDocumentsDirectory();
+        final file = File('${dir.path}/prescription.pdf');
+        await file.writeAsBytes(bytes.buffer.asUint8List(), flush: true);
+        setState(() {
+          localPath = file.path;
+        });
+      }
     } catch (e) {
       // Handle error silently for web
     }
