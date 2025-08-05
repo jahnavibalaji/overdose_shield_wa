@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'naloxone_map.dart';
 import 'narcan_prescription.dart';
 import 'narcan_instruction.dart';
+import 'auth/login_screen.dart';
+import 'auth/signup_screen.dart';
 
 void main() {
   runApp(const OverdoseShieldApp());
@@ -18,10 +19,12 @@ class OverdoseShieldApp extends StatelessWidget {
         primarySwatch: Colors.red,
         useMaterial3: true,
       ),
-      home: const NaloxoneMapScreen(),
+      home: const LoginScreen(),
       routes: {
         '/narcan_prescription': (context) => const NarcanPrescriptionScreen(),
         '/narcan_instruction': (context) => const NarcanInstructionScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/signup': (context) => const SignupScreen(),
       },
     );
   }
