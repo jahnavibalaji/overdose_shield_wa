@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'auth/firebase_auth_service.dart';
 
 class NaloxoneMapScreen extends StatelessWidget {
   const NaloxoneMapScreen({super.key});
@@ -80,11 +81,37 @@ class NaloxoneMapScreen extends StatelessWidget {
     }
   }
 
+  Future<void> _logout(BuildContext context) async {
+    try {
+      final authService = FirebaseAuthService();
+      await authService.signOut();
+      
+      if (context.mounted) {
+        Navigator.of(context).pushReplacementNamed('/login');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logout failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Overdose Shield WA'),
+        actions: [
+          IconButton(
+            onPressed: () => _logout(context),
+            icon: const Icon(Icons.logout),
+          ),
+        ],
       ),
       body: Center(
         child: SingleChildScrollView(

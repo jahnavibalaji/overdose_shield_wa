@@ -3,7 +3,6 @@ import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'dart:io';
 import 'narcan_instruction.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 // Conditional imports for mobile only

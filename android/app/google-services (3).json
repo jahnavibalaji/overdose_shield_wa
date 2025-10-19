@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "368704473385",
+    "project_id": "overdoseshieldwa",
+    "storage_bucket": "overdoseshieldwa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:368704473385:android:16fab4907a30fd20134f38",
+        "android_client_info": {
+          "package_name": "com.overdoseshield.narcan"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "368704473385-tamaf4ro9t1ljp8b7b2vvcr73l8qckpl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.overdoseshield.narcan",
+            "certificate_hash": "bf800530273c7ec69e0399f46955b88d765b0e85"
+          }
+        },
+        {
+          "client_id": "368704473385-4112mm9ke9khi6dqut6scu8g0vskk0h0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJ1z3F4DDPxx20-iQ9cnzGIbWjxzQkKTg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "368704473385-4112mm9ke9khi6dqut6scu8g0vskk0h0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

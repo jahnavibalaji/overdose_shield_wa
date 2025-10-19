@@ -1,4 +1,4 @@
-package com.example.overdose_shield_wa
+package com.overdoseshield.narcan
 
 import io.flutter.embedding.android.FlutterActivity
 

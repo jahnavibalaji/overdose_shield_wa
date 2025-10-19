@@ -3,13 +3,14 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services")
 }
 
 android {
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973" // ✅ Correctly set here
 
-    namespace = "com.example.overdose_shield_wa"
+    namespace = "com.overdoseshield.narcan"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -21,8 +22,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.overdose_shield_wa"
-        minSdk = flutter.minSdkVersion
+        applicationId = "com.overdoseshield.narcan"
+        minSdk = 23 // Updated to meet Firebase Auth requirements
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
