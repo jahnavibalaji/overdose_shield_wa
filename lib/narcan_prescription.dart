@@ -45,7 +45,11 @@ class _NarcanPrescriptionScreenState extends State<NarcanPrescriptionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Prescription PDF')),
+      appBar: AppBar(
+        title: const Text('Prescription PDF'),
+        backgroundColor: const Color(0xFF1A237E),
+        foregroundColor: Colors.white,
+      ),
       body: kIsWeb 
           ? _buildWebView()
           : _buildMobileView(),

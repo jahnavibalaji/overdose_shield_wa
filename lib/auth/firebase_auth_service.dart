@@ -1,13 +1,16 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
+import '../models/user_profile.dart';
+import '../models/user_type.dart';
 
 class FirebaseAuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     // Use minimal configuration to avoid People API
     scopes: <String>[], // Empty scopes array
+    // Force account selection
+    forceCodeForRefreshToken: true,
   );
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -22,6 +25,7 @@ class FirebaseAuthService {
     required String email,
     required String password,
     required String displayName,
+    UserType userType = UserType.receiver,
   }) async {
     try {
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
@@ -36,8 +40,10 @@ class FirebaseAuthService {
       await _firestore.collection('users').doc(userCredential.user!.uid).set({
         'email': email,
         'displayName': displayName,
+        'userType': userType.name,
         'createdAt': FieldValue.serverTimestamp(),
         'lastLoginAt': FieldValue.serverTimestamp(),
+        'isActiveResponder': false,
       });
 
       return userCredential;
@@ -57,10 +63,26 @@ class FirebaseAuthService {
         password: password,
       );
 
-      // Update last login time
-      await _firestore.collection('users').doc(userCredential.user!.uid).update({
-        'lastLoginAt': FieldValue.serverTimestamp(),
-      });
+      // Try to update last login time, create document if it doesn't exist
+      try {
+        await _firestore.collection('users').doc(userCredential.user!.uid).update({
+          'lastLoginAt': FieldValue.serverTimestamp(),
+        });
+      } catch (e) {
+        // If update fails, document might not exist, create it
+        print('User document not found, creating profile for existing user...');
+        await _firestore.collection('users').doc(userCredential.user!.uid).set({
+          'email': userCredential.user!.email,
+          'displayName': userCredential.user!.displayName,
+          'photoURL': userCredential.user!.photoURL,
+          'userType': UserType.receiver.name, // Default to receiver
+          'createdAt': FieldValue.serverTimestamp(),
+          'lastLoginAt': FieldValue.serverTimestamp(),
+          'provider': 'email',
+          'isActiveResponder': false,
+        }, SetOptions(merge: true));
+        print('User profile created successfully');
+      }
 
       return userCredential;
     } on FirebaseAuthException catch (e) {
@@ -72,6 +94,10 @@ class FirebaseAuthService {
   Future<UserCredential?> signInWithGoogle() async {
     try {
       print('Starting Google Sign-in...');
+      
+      // Sign out from Google first to allow account selection
+      await _googleSignIn.signOut();
+      print('Signed out from Google to allow account selection');
       
       // Trigger the authentication flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
@@ -110,9 +136,11 @@ class FirebaseAuthService {
             'email': userCredential.user!.email,
             'displayName': userCredential.user!.displayName,
             'photoURL': userCredential.user!.photoURL,
+            'userType': UserType.receiver.name, // Default to receiver for Google sign-in
             'createdAt': FieldValue.serverTimestamp(),
             'lastLoginAt': FieldValue.serverTimestamp(),
             'provider': 'google',
+            'isActiveResponder': false,
           });
           print('Firestore document created successfully');
         } else {
@@ -125,7 +153,25 @@ class FirebaseAuthService {
         }
       } catch (firestoreError) {
         print('Firestore operation failed: $firestoreError');
-        // Don't throw the error, just log it - authentication was successful
+        // If it's a "document not found" error, create the document
+        if (firestoreError.toString().contains('not-found')) {
+          print('Document not found, creating user profile...');
+          try {
+            await _firestore.collection('users').doc(userCredential.user!.uid).set({
+              'email': userCredential.user!.email,
+              'displayName': userCredential.user!.displayName,
+              'photoURL': userCredential.user!.photoURL,
+              'userType': UserType.receiver.name,
+              'createdAt': FieldValue.serverTimestamp(),
+              'lastLoginAt': FieldValue.serverTimestamp(),
+              'provider': 'google',
+              'isActiveResponder': false,
+            });
+            print('User profile created successfully');
+          } catch (createError) {
+            print('Failed to create user profile: $createError');
+          }
+        }
       }
 
       print('Google Sign-in completed successfully!');
@@ -146,8 +192,26 @@ class FirebaseAuthService {
         _auth.signOut(),
         _googleSignIn.signOut(),
       ]);
+      print('Successfully signed out from Firebase and Google');
     } catch (e) {
       throw Exception('Failed to sign out: $e');
+    }
+  }
+
+  // Clear all authentication data (for account switching)
+  Future<void> clearAllAuthData() async {
+    try {
+      // Sign out from Firebase
+      await _auth.signOut();
+      
+      // Sign out from Google and disconnect
+      await _googleSignIn.signOut();
+      await _googleSignIn.disconnect();
+      
+      print('Cleared all authentication data');
+    } catch (e) {
+      print('Error clearing auth data: $e');
+      throw Exception('Failed to clear authentication data: $e');
     }
   }
 
@@ -160,18 +224,6 @@ class FirebaseAuthService {
     }
   }
 
-  // Update user profile
-  Future<void> updateUserProfile({
-    String? displayName,
-    String? photoURL,
-  }) async {
-    try {
-      await _auth.currentUser?.updateDisplayName(displayName);
-      await _auth.currentUser?.updatePhotoURL(photoURL);
-    } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
-    }
-  }
 
   // Delete user account
   Future<void> deleteUserAccount() async {
@@ -193,6 +245,67 @@ class FirebaseAuthService {
       return doc.data() as Map<String, dynamic>?;
     } catch (e) {
       throw Exception('Failed to get user data: $e');
+    }
+  }
+
+  // Get user profile
+  Future<UserProfile?> getUserProfile(String uid) async {
+    try {
+      DocumentSnapshot doc = await _firestore.collection('users').doc(uid).get();
+      if (doc.exists) {
+        return UserProfile.fromFirestore(doc);
+      }
+      return null;
+    } catch (e) {
+      throw Exception('Failed to get user profile: $e');
+    }
+  }
+
+  // Update user profile
+  Future<void> updateUserProfile(UserProfile profile) async {
+    try {
+      await _firestore.collection('users').doc(profile.uid).update(profile.toFirestore());
+    } catch (e) {
+      throw Exception('Failed to update user profile: $e');
+    }
+  }
+
+  // Update user type
+  Future<void> updateUserType(String uid, UserType userType) async {
+    try {
+      print('Updating user type for uid: $uid to: ${userType.name}');
+      await _firestore.collection('users').doc(uid).set({
+        'userType': userType.name,
+        'lastUpdated': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      print('User type updated successfully');
+    } catch (e) {
+      print('Error updating user type: $e');
+      throw Exception('Failed to update user type: $e');
+    }
+  }
+
+  // Update responder status
+  Future<void> updateResponderStatus(String uid, bool isActiveResponder) async {
+    try {
+      await _firestore.collection('users').doc(uid).update({
+        'isActiveResponder': isActiveResponder,
+      });
+    } catch (e) {
+      throw Exception('Failed to update responder status: $e');
+    }
+  }
+
+  // Update location for responders
+  Future<void> updateLocation(String uid, double latitude, double longitude) async {
+    try {
+      await _firestore.collection('users').doc(uid).update({
+        'latitude': latitude,
+        'longitude': longitude,
+        'lastLocationUpdate': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw Exception('Failed to update location: $e');
     }
   }
 

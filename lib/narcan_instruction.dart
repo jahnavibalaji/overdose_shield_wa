@@ -40,7 +40,11 @@ class _NarcanInstructionScreenState extends State<NarcanInstructionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Narcan Instructions')),
+      appBar: AppBar(
+        title: const Text('Narcan Instructions'),
+        backgroundColor: const Color(0xFF1A237E),
+        foregroundColor: Colors.white,
+      ),
       body: kIsWeb 
           ? _buildWebView()
           : _buildMobileView(),
