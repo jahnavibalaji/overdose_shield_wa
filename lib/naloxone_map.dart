@@ -87,11 +87,12 @@ class NaloxoneMapScreen extends StatelessWidget {
 
   Future<void> _sendSOSAlert(BuildContext context) async {
     try {
-      // Get current location
+      // Get current location with maximum accuracy for navigation
       Position? position;
       try {
         position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high,
+          desiredAccuracy: LocationAccuracy.bestForNavigation,
+          timeLimit: const Duration(seconds: 15), // Wait up to 15 seconds for best GPS signal
         );
       } catch (e) {
         if (context.mounted) {
@@ -228,8 +229,8 @@ class NaloxoneMapScreen extends StatelessWidget {
             .toList();
 
         if (phoneNumbers.isNotEmpty) {
-          // Create emergency message with location
-          final locationUrl = 'https://www.google.com/maps?q=${position.latitude},${position.longitude}';
+          // Create emergency message with location (full precision)
+          final locationUrl = 'https://www.google.com/maps?q=${position.latitude.toStringAsFixed(7)},${position.longitude.toStringAsFixed(7)}';
           final smsBody = 'EMERGENCY: I need help immediately! My location: $locationUrl Please respond as soon as possible.';
           final smsUri = Uri.parse('sms:${phoneNumbers.join(',')}?body=${Uri.encodeComponent(smsBody)}');
 

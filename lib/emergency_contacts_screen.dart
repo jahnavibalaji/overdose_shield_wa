@@ -165,9 +165,10 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
     String locationInfo = '';
     try {
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        desiredAccuracy: LocationAccuracy.bestForNavigation,
+        timeLimit: const Duration(seconds: 15), // Wait up to 15 seconds for best GPS signal
       );
-      final locationUrl = 'https://www.google.com/maps?q=${position.latitude},${position.longitude}';
+      final locationUrl = 'https://www.google.com/maps?q=${position.latitude.toStringAsFixed(7)},${position.longitude.toStringAsFixed(7)}';
       locationInfo = '\n\nMy location: $locationUrl';
     } catch (e) {
       print('Could not get location: $e');
@@ -268,9 +269,10 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
       String locationInfo = '';
       try {
         final position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high,
+          desiredAccuracy: LocationAccuracy.bestForNavigation,
+          timeLimit: const Duration(seconds: 15), // Wait up to 15 seconds for best GPS signal
         );
-        final locationUrl = 'https://www.google.com/maps?q=${position.latitude},${position.longitude}';
+        final locationUrl = 'https://www.google.com/maps?q=${position.latitude.toStringAsFixed(7)},${position.longitude.toStringAsFixed(7)}';
         locationInfo = '\n\nMy location: $locationUrl';
       } catch (e) {
         print('Could not get location: $e');

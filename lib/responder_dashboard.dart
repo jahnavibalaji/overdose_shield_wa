@@ -56,7 +56,8 @@ class _ResponderDashboardState extends State<ResponderDashboard> {
             }
 
             final position = await Geolocator.getCurrentPosition(
-              desiredAccuracy: LocationAccuracy.high,
+              desiredAccuracy: LocationAccuracy.bestForNavigation,
+              timeLimit: const Duration(seconds: 15), // Wait up to 15 seconds for best GPS signal
             );
             
             final alertService = AlertService();
@@ -487,8 +488,9 @@ class _ResponderDashboardState extends State<ResponderDashboard> {
     final lat = notification['latitude'] ?? 0.0;
     final lng = notification['longitude'] ?? 0.0;
     
+    // Use full precision coordinates for accurate navigation
     final googleMapsUrl = Uri.parse(
-      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng',
+      'https://www.google.com/maps/dir/?api=1&destination=${lat.toStringAsFixed(7)},${lng.toStringAsFixed(7)}',
     );
 
     try {
@@ -508,28 +510,59 @@ class _ResponderDashboardState extends State<ResponderDashboard> {
   Future<void> _respondToAlert(Map<String, dynamic> notification) async {
     try {
       final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        await FirebaseFirestore.instance
-            .collection('notifications')
-            .doc(notification['id'])
-            .update({
-          'status': 'responded',
-          'responderAccountId': user.uid,
-          'respondedAt': FieldValue.serverTimestamp(),
-        });
-        
+      if (user == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Response recorded successfully'),
-              backgroundColor: Colors.green,
-      ),
-    );
-  }
-
-        // Reload notifications
-        _loadNotifications();
+              content: Text('User not authenticated'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
       }
+
+      final notificationId = notification['id'] as String?;
+      if (notificationId == null || notificationId.startsWith('test_alert_')) {
+        // Test alert - just show success message without updating Firestore
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Response recorded (test alert)'),
+              backgroundColor: Colors.blue,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Real alert - update Firestore using set with merge to handle missing documents
+      await FirebaseFirestore.instance
+          .collection('notifications')
+          .doc(notificationId)
+          .set({
+        'status': 'responded',
+        'responderAccountId': user.uid,
+        'respondedAt': FieldValue.serverTimestamp(),
+        // Preserve existing fields
+        'message': notification['message'],
+        'latitude': notification['latitude'],
+        'longitude': notification['longitude'],
+        'timestamp': notification['timestamp'],
+        'senderId': notification['senderId'],
+      }, SetOptions(merge: true));
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Response recorded successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+
+      // Reload notifications
+      _loadNotifications();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -539,6 +572,7 @@ class _ResponderDashboardState extends State<ResponderDashboard> {
           ),
         );
       }
+      print('Error responding to alert: $e');
     }
   }
 

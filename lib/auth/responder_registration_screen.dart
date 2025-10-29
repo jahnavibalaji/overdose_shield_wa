@@ -50,7 +50,8 @@ class _ResponderRegistrationScreenState extends State<ResponderRegistrationScree
       }
 
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        desiredAccuracy: LocationAccuracy.bestForNavigation,
+        timeLimit: const Duration(seconds: 15), // Wait up to 15 seconds for best GPS signal
       );
       
       setState(() {
