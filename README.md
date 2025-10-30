@@ -304,3 +304,5 @@ A license may be added in a future release once the project is finalized and rev
 ---
 
 **Important Notice**: This application is designed to assist in overdose prevention and emergency response. It is not a replacement for professional medical care or emergency services. Always call 911 in case of a medical emergency.
+
+<!-- noop: trigger auth prompt on push -->
